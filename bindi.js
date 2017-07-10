@@ -214,7 +214,7 @@ var bindi = new function()
           for (var i = 0; i < attr.length; i++)
           {
             if (attr[i] == BINDI_HTML_VALUE)
-              self.bindText(component, data);
+              occurences += self.bindText(component, data);
             else
             {
               attrValue = component.getAttribute(attr[i]);
@@ -231,7 +231,7 @@ var bindi = new function()
         for (var i = 0; i < attr.length; i++)
         {
           if (attr[i] == BINDI_HTML_VALUE)
-            self.bindText(component, undefined);
+            occurences += self.bindText(component, undefined);
           else
           {
             attrValue = component.getAttribute(attr[i]);

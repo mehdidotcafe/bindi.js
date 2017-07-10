@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Simple Test</title>
+    <style>
+      #green
+      {
+        color: green;
+      }
+
+      #red
+      {
+        color: red;
+      }
+    </style>
+    <link rel="stylesheet" type="text/css" href="../bindi.css">
+  </head>
+  <body>
+    <div style="height: 300px; background-color: red"></div>
+    <div style="height: 300px; background-color: pink"></div>
+    <div bi-name="simple-component" bi="html id" id="%id%">
+      %text%
+    </div>
+    <div style="height: 300px; background-color: yellow"></div>
+    <div style="height: 300px; background-color: blue"></div>
+    <div bi-name="cloned-component" bi-as="simple-component"></div>
+    <script src="../bindi.js"></script>
+    <script src="../bindi-as.js"></script>
+    <script>
+    bindi.init();
+    var data = {
+      id: "green",
+      text: "Hello World"
+    };
+
+    var dataArray = [data, {id: "red", text: "Double cloned"}];
+
+    bindi.update("simple-component", data);
+    bindi.update("cloned-component", dataArray);
+    </script>
+  </body>
+</html>

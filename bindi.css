@@ -1,0 +1,9 @@
+*[bi-name]
+{
+  display: none;
+}
+
+*[bi-loaded]
+{
+  display: block;
+}

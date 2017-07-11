@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Bindi src</title>
+    <link rel="stylesheet" type="text/css" href="../bindi.css">
+  </head>
+  <body>
+    <div bi-name="simple-component" bi="id" id="%id%">
+      <img bi-src="http://www.willemsefrance.fr/media/%path%"></img>
+      <span bi="text">%text%</span>
+    </div>
+    <script src="../bindi.js"></script>
+    <script src="../bindi-src.js"></script>
+    <script>
+      bindi.init();
+      var data = {
+        id: "green",
+        text: "Hello World",
+        path: "catalog/product/cache/1/image/x300/p/a/palmier_des_canaries_r00611290178_0.jpg"
+      };
+
+      bindi.update("simple-component", data);
+    </script>
+  </body>
+</html>

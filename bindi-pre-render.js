@@ -25,7 +25,7 @@
     }
   }
 
-  bindi.subscribeOnPreRender(function(tagName, variableName, variableValue)
+  bindi.onPreRender(function(tagName, variableName, variableValue)
   {
     var value = variableValue;
 

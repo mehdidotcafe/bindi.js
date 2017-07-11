@@ -44,7 +44,8 @@
     unmatchedComponents[name].push({component: component, name: componentName, model: model});
   }
 
-  bindi.subscribeOnRegister(function(name, component, model, bindi)
+  bindi.addAttribute(BINDI_AS);
+  bindi.onRegister(function(name, component, model, bindi)
   {
     var element = component.element;
     var attr;

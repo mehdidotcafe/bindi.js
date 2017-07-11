@@ -15,6 +15,8 @@ var bindi = new function()
   var registerListeners = [];
   var preRenderListeners = [];
   var postRenderListeners = [];
+  var cloneListeners = [];
+  var bindListeners = [];
 
   var self = this;
 
@@ -38,6 +40,7 @@ var bindi = new function()
   */
   var components = {};
   var componentsList = [];
+  var bindiAttributes = [];
 
   this.getComponents = function()
   {
@@ -68,6 +71,16 @@ var bindi = new function()
         }
       }
     return (false);
+  }
+
+  this.addAttribute = function(attribute)
+  {
+    for (var i = 0; i < bindiAttributes.length; i++)
+    {
+      if (bindiAttributes[i] == attribute)
+        return ;
+    }
+    bindiAttributes.push(attribute);
   }
 
   this.addComponentToCollection = function(name, component)
@@ -120,7 +133,7 @@ var bindi = new function()
     return (element.cloneNode(param));
   }
 
-  this.subscribeOnPreRender = function(onPreRender)
+  this.onPreRender = function(onPreRender)
   {
     preRenderListeners.push(onPreRender);
   }
@@ -132,7 +145,7 @@ var bindi = new function()
     return (variableValue);
   }
 
-  this.subscribeOnRegister = function(onRegister)
+  this.onRegister = function(onRegister)
   {
     registerListeners.push(onRegister);
   }
@@ -143,10 +156,34 @@ var bindi = new function()
       registerListeners[i](name, component, model, self);
   }
 
+  this.onClone = function(onClone)
+  {
+    cloneListeners.push(onClone);
+  }
+
+  this.notifyCloneSubscribers = function(component)
+  {
+    for (var i = 0; i < cloneListeners.length; i++)
+      cloneListeners[i](component, self);
+  }
+
+  this.onBind = function(onBind)
+  {
+    bindListeners.push(onBind);
+  }
+
+  this.notifyBindSubscribers = function(element)
+  {
+    for (var i = 0; i < bindListeners.length; i++)
+      bindListeners[i](element, self);
+  }
+
+
   this.registerComponent = function(name, element)
   {
     var model = new this.ComponentModel(element);
-    var component = new this.ComponentModel(this.cloneNode(element, true));
+    var component = this.cloneModelFromModel(model);
+    // var component = new this.ComponentModel(this.cloneNode(element, true));
 
     if (!components.hasOwnProperty(name))
     {
@@ -205,8 +242,12 @@ var bindi = new function()
     var occurences = 0;
 
     if (attr && attr != "")
-    {
       attr = attr.split(LIST_SEPARATOR_TOKEN);
+    else
+      attr = [];
+    attr = attr.concat(bindiAttributes);
+    if (attr.length > 0)
+    {
       if (data !== undefined)
       {
         this.foreachJson(data, function(key, value)
@@ -295,23 +336,25 @@ var bindi = new function()
       occurences += this.bindComponentWithDefault(element.children[i]);
     occurences += this.bindAttributes(element, undefined);
     this.attachDataToComponent(element, undefined);
+    this.notifyBindSubscribers(element);
     return (occurences);
   }
 
 
-  this.bindComponentWithData = function(component, data)
+  this.bindComponentWithData = function(element, data)
   {
-    for (var i = 0; i < component.children.length; i++)
-      this.bindComponentWithData(component.children[i], data);
-      this.bindAttributes(component, data);
-    this.bindText(component, data);
-    this.attachDataToComponent(component, data);
-    return (component);
+    for (var i = 0; i < element.children.length; i++)
+      this.bindComponentWithData(element.children[i], data);
+      this.bindAttributes(element, data);
+    this.bindText(element, data);
+    this.attachDataToComponent(element, data);
+    this.notifyBindSubscribers(element);
+    return (element);
   }
 
   this.attachDataToComponent = function(element, data)
   {
-    element.Bind = data;
+    element.bindi = data;
   }
 
   this.cloneModel = function(componentName)

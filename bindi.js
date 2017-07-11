@@ -331,13 +331,15 @@ var bindi = new function()
   this.bindComponentWithDefault = function(element)
   {
     var occurences = 0;
+    var occurencesElement = 0;
 
     for (var i = 0; i < element.children.length; i++)
       occurences += this.bindComponentWithDefault(element.children[i]);
-    occurences += this.bindAttributes(element, undefined);
+    occurencesElement += this.bindAttributes(element, undefined);
     this.attachDataToComponent(element, undefined);
-    this.notifyBindSubscribers(element);
-    return (occurences);
+    if (occurencesElement > 0)
+      this.notifyBindSubscribers(element);
+    return (occurences + occurencesElement);
   }
 
 

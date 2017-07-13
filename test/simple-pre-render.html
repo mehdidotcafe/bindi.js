@@ -13,15 +13,21 @@
   </head>
   <body>
     <div bi-name="simple-component" bi="html id" id="%id%">
-      %text%
+      %text:%
     </div>
     <script src="../bindi.js"></script>
     <script src="../bindi-pre-render.js"></script>
     <script>
+
+    bindi.addPreRender("html", "text", function(a, b, value)
+    {
+      return ("Default value");
+    });
+
     bindi.init();
     var data = {
       id: "green",
-      text: "Hello World"
+      text: null
     };
 
     bindi.update("simple-component", data);

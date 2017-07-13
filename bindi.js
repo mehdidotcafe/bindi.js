@@ -226,11 +226,16 @@ var bindi = new function()
 
   this.replaceBinding = function(element, tagName, variableName, variableValue, bindings)
   {
+    var ret = preRenderListeners.length > 0 ? 1 : 0;
+
     variableValue = this.notifyPreRenderSubscribers(tagName, variableName, variableValue);
     if (tagName != BINDI_HTML_VALUE)
       element.setAttribute(tagName, element.getAttribute(tagName).replace(bindings, variableValue));
     else
+    {
       element.textContent = element.textContent.replace(bindings, variableValue);
+    }
+    return (ret);
   }
 
   this.bindAttributes = function(component, data)
@@ -259,9 +264,9 @@ var bindi = new function()
             else
             {
               attrValue = component.getAttribute(attr[i]);
-              if (attrValue != null && attrValue.match(getBinding(key)) !== null)
+              if (attrValue != null && (matches = attrValue.match(getBinding(key))) !== null)
               {
-                self.replaceBinding(component, attr[i], key, value, getBinding(key));
+                occurences += self.replaceBinding(component, attr[i], key, value, matches[0]);
               }
             }
           }
@@ -285,7 +290,7 @@ var bindi = new function()
                 }
                 else
                   str = '';
-                self.replaceBinding(component, attr[i], undefined, str, matches[0]);
+                occurences += self.replaceBinding(component, attr[i], matches[1], str, matches[0]);
                 attrValue = component.getAttribute(attr[i]);
               }
           }
@@ -299,21 +304,21 @@ var bindi = new function()
   {
     var str;
     var occurences = 0;
+    var matches;
 
 
       if (data !== undefined)
       {
         this.foreachJson(data, function(key, value)
         {
-          if (component.textContent.match(getBinding(key)) !== null)
-            self.replaceBinding(component, BINDI_HTML_VALUE, key, value, getBinding(key));
+          if ((matches = component.textContent.match(getBinding(key))) !== null)
+            occurences += self.replaceBinding(component, BINDI_HTML_VALUE, key, value, matches[0]);
         });
       }
       else
       {
         while ((matches = component.textContent.match(getBinding())) !== null)
           {
-
             if (matches[matches.length - 1])
             {
               ++occurences;
@@ -321,7 +326,7 @@ var bindi = new function()
             }
             else
               str = '';
-            self.replaceBinding(component, BINDI_HTML_VALUE, undefined, str, matches[0]);
+            occurences += self.replaceBinding(component, BINDI_HTML_VALUE, matches[1], str, matches[0]);
           }
       }
     component.setAttribute(BINDI_LOADED, true);
@@ -347,7 +352,7 @@ var bindi = new function()
   {
     for (var i = 0; i < element.children.length; i++)
       this.bindComponentWithData(element.children[i], data);
-      this.bindAttributes(element, data);
+    this.bindAttributes(element, data);
     this.bindText(element, data);
     this.attachDataToComponent(element, data);
     this.notifyBindSubscribers(element);

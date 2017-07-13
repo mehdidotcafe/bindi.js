@@ -226,7 +226,7 @@ var bindi = new function()
 
   this.replaceBinding = function(element, tagName, variableName, variableValue, bindings)
   {
-    var ret = preRenderListeners.length > 0 ? 1 : 0;
+    var oldVariableValue = variableValue;
 
     variableValue = this.notifyPreRenderSubscribers(tagName, variableName, variableValue);
     if (tagName != BINDI_HTML_VALUE)
@@ -235,7 +235,7 @@ var bindi = new function()
     {
       element.textContent = element.textContent.replace(bindings, variableValue);
     }
-    return (ret);
+    return (oldVariableValue == variableValue ? 0 : 1);
   }
 
   this.bindAttributes = function(component, data)

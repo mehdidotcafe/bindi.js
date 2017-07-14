@@ -13,18 +13,26 @@
       {
         color: red;
       }
+
+      #pink
+      {
+        color: pink;
+      }
     </style>
     <link rel="stylesheet" type="text/css" href="../bindi.css">
   </head>
   <body>
+    <div bi-name="cloned-component2" bi-as="cloned-component"></div>
     <div style="height: 300px; background-color: red"></div>
     <div style="height: 300px; background-color: pink"></div>
     <div bi-name="simple-component" bi="html id" id="%id%">
-      %text%
+      %text:toto%
     </div>
     <div style="height: 300px; background-color: yellow"></div>
     <div style="height: 300px; background-color: blue"></div>
     <div bi-name="cloned-component" bi-as="simple-component"></div>
+    <div bi-name="cloned-component3" bi-as="simple-component"></div>
+
     <script src="../bindi.js"></script>
     <script src="../bindi-as.js"></script>
     <script>
@@ -36,8 +44,20 @@
 
     var dataArray = [data, {id: "red", text: "Double cloned"}];
 
+    var dataThree = {
+      id: "red",
+      text:"CLONED THREE"
+    }
+
+    var dataTwo = {
+      id: "pink",
+      text: "Very first component"
+    }
+
     bindi.update("simple-component", data);
     bindi.update("cloned-component", dataArray);
+    bindi.update("cloned-component2", dataTwo);
+    bindi.update("cloned-component3", dataThree);
     </script>
   </body>
 </html>

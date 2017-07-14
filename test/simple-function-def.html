@@ -8,29 +8,37 @@
       {
         color: green;
       }
+
+      #big
+      {
+        font-size: 42px;
+      }
     </style>
     <link rel="stylesheet" type="text/css" href="../bindi.css">
   </head>
   <body>
-    <div bi-name="simple-component" bi="html id" id="%id%">
-      %text:%
+    <div bi-name="simple-component" bi="html id" id="%formatOutput(id:big)%">
+      %text:Hello%
     </div>
     <script src="../bindi.js"></script>
     <script src="../bindi-pre-render.js"></script>
     <script>
 
-    bindi.addPreRender("html", "text", function(a, b, value)
+    function formatOutput(id)
     {
-      return ("Default value");
-    });
+      return (id);
+    }
 
     bindi.init();
     var data = {
       id: "green",
-      text: null
+      text: "New Data"
     };
 
-    bindi.update("simple-component", data);
+    setTimeout(function()
+    {
+      bindi.update("simple-component", data);
+    }, 1000);
     </script>
   </body>
 </html>

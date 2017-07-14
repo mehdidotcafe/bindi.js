@@ -50,13 +50,13 @@
     var element = component.element;
     var attr;
 
-    if (unmatchedComponents.hasOwnProperty(name))
-      cloneUnmatchedFromSource(name, model, bindi);
     if (!(attr = element.getAttribute(BINDI_AS)))
       return ;
     if (!bindi.getComponents()[attr])
       self.addComponentToUnmatched(attr, name, component, model);
     else
       self.clone(name, attr, component, model, bindi.getComponents()[attr].model);
+    if (unmatchedComponents.hasOwnProperty(name))
+      cloneUnmatchedFromSource(name, model, bindi);
   });
 })();

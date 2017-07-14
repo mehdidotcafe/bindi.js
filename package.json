@@ -1,6 +1,6 @@
 {
   "name": "bindi.js",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "Tiny HTML / JS binding library",
   "main": "bindi.js",
   "scripts": {

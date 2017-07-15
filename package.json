@@ -1,6 +1,6 @@
 {
-  "name": "bindi.js",
-  "version": "0.0.8",
+  "name": "bindiJS",
+  "version": "0.0.9",
   "description": "Tiny HTML / JS binding library",
   "main": "bindi.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Meddou/Bind.git"
+    "url": "git+https://github.com/Meddou/bindiJS.git"
   },
   "keywords": [
     "JS",

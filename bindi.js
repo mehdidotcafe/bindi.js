@@ -19,9 +19,12 @@ var bindi = new function()
 
   var registerListeners = [];
   var preRenderListeners = [];
+  var initListeners = []
   var postRenderListeners = [];
   var cloneListeners = [];
   var bindListeners = [];
+  var addListeners = [];
+  var removeListeners = [];
 
   var self = this;
 
@@ -60,11 +63,42 @@ var bindi = new function()
     components = {};
   }
 
+   var removeElementTimeout = function(element)
+  {
+    return function()
+    {
+      element.remove();
+    };
+  }
+
+
+  this.getMaxElementDelay = function(element)
+  {
+    var durationProperties = ["animation-duration", "transition-duration"];
+    var delayProperties = ["animation-delay", "transition-delay"];
+    var delay = 0;
+    var tmpDelay;
+    var tmpDuration;
+
+    for (var i = 0; i < delayProperties.length; i++)
+    {
+      tmpDuration = getComputedStyle(element)[durationProperties[i]];
+      tmpDuration = parseFloat(tmpDuration) * (tmpDuration.substr(-2) == "ms" ? 1 : 1000);
+      tmpDelay = getComputedStyle(element)[delayProperties[i]];
+      tmpDelay = parseFloat(tmpDelay) * (tmpDelay.substr(-2) == "ms" ? 1 : 1000);
+      tmpDelay += tmpDuration;
+      if (tmpDelay > delay)
+        delay = tmpDelay;
+    }
+    return (delay);
+  }
+
   this.remove = function(name)
   {
     for (var i = 0; i < components[name].elements.length; i++)
     {
-      components[name].elements[i].element.remove();
+      this.notifyRemoveSusbcribers(components[name].elements[i]);
+      setTimeout(removeElementTimeout(components[name].elements[i].element), this.getMaxElementDelay(components[name].elements[i].element));
     }
     components[name].elements = [];
   }
@@ -81,7 +115,7 @@ var bindi = new function()
     return (false);
   }
 
-  this.addAttribute = function(attribute)
+  this.register = function(attribute)
   {
     for (var i = 0; i < bindiAttributes.length; i++)
     {
@@ -155,9 +189,39 @@ var bindi = new function()
     return (element.cloneNode(param));
   }
 
+  this.onClone = function(onClone)
+  {
+    cloneListeners.push(onClone);
+  }
+
+  this.onBind = function(onBind)
+  {
+    bindListeners.push(onBind);
+  }
+
   this.onPreRender = function(onPreRender)
   {
     preRenderListeners.push(onPreRender);
+  }
+
+  this.onRegister = function(onRegister)
+  {
+    registerListeners.push(onRegister);
+  }
+
+  this.onInit = function(onInit)
+  {
+    initListeners.push(onInit);
+  }
+
+  this.onAdd = function(onAdd)
+  {
+    addListeners.push(onAdd);
+  }
+
+  this.onRemove = function(onRemove)
+  {
+    removeListeners.push(onRemove);
   }
 
   this.notifyPreRenderSubscribers = function(componentName, tagName, variableName, variableValue, phase)
@@ -167,20 +231,16 @@ var bindi = new function()
     return (variableValue);
   }
 
-  this.onRegister = function(onRegister)
-  {
-    registerListeners.push(onRegister);
-  }
-
   this.notifyRegisterSubscribers = function(name, component, model, element)
   {
     for (var i = 0; i < registerListeners.length; i++)
       registerListeners[i](name, component, model, self);
   }
 
-  this.onClone = function(onClone)
+  this.notifyInitSubscribers = function(config)
   {
-    cloneListeners.push(onClone);
+    for (var i = 0; i < initListeners.length; i++)
+      initListeners[i](config, self);
   }
 
   this.notifyCloneSubscribers = function(component)
@@ -189,17 +249,31 @@ var bindi = new function()
       cloneListeners[i](component, self);
   }
 
-  this.onBind = function(onBind)
-  {
-    bindListeners.push(onBind);
-  }
-
   this.notifyBindSubscribers = function(element)
   {
     for (var i = 0; i < bindListeners.length; i++)
       bindListeners[i](element, self);
   }
 
+  this.notifyRemoveSusbcribers = function(element)
+  {
+    var maxDuration = undefined;
+    var duration;
+
+    for (var i = 0; i < removeListeners.length; i++)
+    {
+      duration = removeListeners[i](element, self);
+      if (duration && (!maxDuration || (parseInt(duration) > maxDuration)))
+        maxDuration = duration;
+    }
+    return (maxDuration || 0);
+  }
+
+  this.notifyAddSusbcribers = function(element)
+  {
+    for (var i = 0; i < addListeners.length; i++)
+      addListeners[i](element, self);
+  }
 
   this.registerComponent = function(name, element)
   {
@@ -439,6 +513,7 @@ var bindi = new function()
 
     this.bindComponentWithData(componentName, newComponent.element, object);
     newComponent.element.setAttribute(BINDI_LOADED, true);
+    this.notifyAddSusbcribers(newComponent);
     this.insertElement(components[componentName], newComponent.element);
     this.addComponentToCollection(componentName, newComponent.element);
   }
@@ -463,10 +538,12 @@ var bindi = new function()
     this.add(componentName, data);
   }
 
-  this.init = function()
+  this.init = function(config)
   {
     var elements = document.querySelectorAll('[' + BINDI_NAME + ']');
 
+    if (config !== null && typeof config === 'object')
+      this.notifyInitSubscribers(config);
     for (var i = 0; i < elements.length; i++)
     {
       if (!self.contains(elements[i]))

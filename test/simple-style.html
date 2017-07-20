@@ -8,7 +8,30 @@
       {
         color: green;
       }
+
+      @keyframes fadeIn
+      {
+        from {opacity: 0;}
+        to {opacity: 1;}
+      }
+
+      @keyframes fadeOut
+      {
+        from {opacity: 1;}
+        to {opacity: 0;}
+      }
+
+      .bi-add
+      {
+        animation: fadeIn 3s;
+      }
+
+      .bi-rm
+      {
+        animation: fadeOut 3s 2s;
+      }
     </style>
+
     <link rel="stylesheet" type="text/css" href="../bindi.css">
   </head>
   <body>
@@ -16,6 +39,7 @@
       %text%
     </div>
     <script src="../bindi.js"></script>
+    <script src="../bindi-style.js"></script>
     <script>
     bindi.init();
     var data = {
@@ -24,6 +48,10 @@
     };
 
     bindi.update("simple-component", data);
+    setTimeout(function()
+    {
+      bindi.remove("simple-component");
+    }, 5000);
     </script>
   </body>
 </html>

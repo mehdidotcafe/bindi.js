@@ -1,6 +1,6 @@
 {
-  "name": "bindiJS",
-  "version": "0.0.9",
+  "name": "bindi.js",
+  "version": "0.0.10",
   "description": "Tiny HTML / JS binding library",
   "main": "bindi.js",
   "scripts": {
@@ -22,7 +22,7 @@
   "author": "Meddou <mehdimeddourdev@gmail.com> (meddou.github.io)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Meddou/Bind/issues"
+    "url": "https://github.com/Meddou/bindiJS/issues"
   },
-  "homepage": "https://github.com/Meddou/Bind#readme"
+  "homepage": "https://github.com/Meddou/bindiJS#readme"
 }

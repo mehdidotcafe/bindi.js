@@ -13,7 +13,7 @@ var bindi = new function()
   var BINDI_INTERPOLATION_REGEX_END = ')('  + BINDI_DEF_VALUE_TOKEN + '([^' + INTERPOLATION_END_TOKEN + ']*))?[' + INTERPOLATION_END_TOKEN + ']';
   var FX_CALL_REGEX = {
       interpolationModel: ".*([" + INTERPOLATION_START_TOKEN + "](.*)[" + INTERPOLATION_END_TOKEN + "]).*",
-      fxCallModel: "[^,()]+",
+      fxCallModel: "\\S+",
       fxCallIndicator: "g"
     }
 

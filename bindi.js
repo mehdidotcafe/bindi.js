@@ -1,10 +1,20 @@
 var bindi = new function()
 {
+  this.DEFAULT_PHASE = 0x1;
+  this.UPDATE_PHASE = 0x2;
+  this.NAME = "bi";
+  this.PREFIX = this.NAME + "-";
+  this.COMPONENT_NAME = this.PREFIX + "name";
+
+  this.config = {
+    removeMarkup: false
+  };
+
   var BINDI_HTML_VALUE = "html";
-  var BINDI_LOADED = "bi-loaded";
-  var BINDI_NAME = "bi-name";
-  var BINDI_ATTR = "bi";
-  var BINDI_AS = "bi-as";
+  var BINDI_LOADED = this.PREFIX + "loaded";
+  var BINDI_NAME = this.COMPONENT_NAME;
+  var BINDI_ATTR = this.NAME;
+  var BINDI_AS = this.PREFIX + "as";
   var INTERPOLATION_START_TOKEN = "%";
   var INTERPOLATION_END_TOKEN = "%";
   var LIST_SEPARATOR_TOKEN = " ";
@@ -15,7 +25,7 @@ var bindi = new function()
       interpolationModel: ".*([" + INTERPOLATION_START_TOKEN + "](.*)[" + INTERPOLATION_END_TOKEN + "]).*",
       fxCallModel: "\\S+",
       fxCallIndicator: "g"
-    }
+    };
 
   var registerListeners = [];
   var preRenderListeners = [];
@@ -25,11 +35,10 @@ var bindi = new function()
   var bindListeners = [];
   var addListeners = [];
   var removeListeners = [];
+  var preInterpretListeners = [];
+  var preBindListeners = [];
 
   var self = this;
-
-  this.DEFAULT_PHASE = 0x1;
-  this.UPDATE_PHASE = 0x2;
 
   var componentModelId= 0;
 
@@ -51,7 +60,7 @@ var bindi = new function()
   */
   var components = {};
   var componentsList = [];
-  var bindiAttributes = [];
+  var bindiAttributes = [BINDI_ATTR, BINDI_NAME];
 
   this.getComponents = function()
   {
@@ -224,6 +233,16 @@ var bindi = new function()
     removeListeners.push(onRemove);
   }
 
+  this.onPreInterpret = function(onPreInterpret)
+  {
+    preInterpretListeners.push(onPreInterpret);
+  }
+
+  this.onPreBind = function(onPreBind)
+  {
+    preBindListeners.push(onPreBind);
+  }
+
   this.notifyPreRenderSubscribers = function(componentName, tagName, variableName, variableValue, phase)
   {
     for (var i = 0; i < preRenderListeners.length; i++)
@@ -273,6 +292,26 @@ var bindi = new function()
   {
     for (var i = 0; i < addListeners.length; i++)
       addListeners[i](element, self);
+  }
+
+  this.notifyPreInterpretSubscribers = function(element)
+  {
+    for (var i = 0; i < preInterpretListeners.length; i++)
+      preInterpretListeners[i](element, self);
+  }
+
+  this.notifyPreBindSubscribers = function(element, attributesList)
+  {
+    var newAttributes = [];
+    var ret;
+
+    for (var i = 0; i < preBindListeners.length; i++)
+    {
+      ret = preBindListeners[i](element, attributesList, self);
+      if (ret !== null && ret.constructor === Array)
+        newAttributes = newAttributes.concat(ret);
+    }
+    return (newAttributes);
   }
 
   this.registerComponent = function(name, element)
@@ -396,6 +435,7 @@ var bindi = new function()
     var occurences = 0;
 
     attr = this.splitConcat(attr);
+    attr = attr.concat(this.notifyPreBindSubscribers(component, attr));
     for (var i = 0; i < attr.length; i++)
     {
       if (attr[i] == BINDI_HTML_VALUE)
@@ -440,11 +480,13 @@ var bindi = new function()
 
   this.bindAttr = function(componentName, element, attr, data, get, set)
   {
-    var attrValue = get();
+    var attrValue;
     var expr;
     var value;
     var occurences = 0;
 
+    this.notifyPreInterpretSubscribers(element);
+    attrValue = get();
     if (attrValue === null)
       return (occurences);
     while ((expr = this.interpret(attrValue)) !== undefined)
@@ -467,6 +509,17 @@ var bindi = new function()
     return (occurences);
   }
 
+  this.removeMarkupFromElement = function(element)
+  {
+    if (this.config.removeMarkup === true)
+      this.config.removeMarkup = bindiAttributes;
+    for (var i = 0; i < this.config.removeMarkup.length; i++)
+    {
+      if (element.hasAttribute(this.config.removeMarkup[i]))
+        element.removeAttribute(this.config.removeMarkup[i]);
+    }
+  }
+
   this.bindComponentWithDefault = function(componentName, element)
   {
     var occurences = 0;
@@ -478,9 +531,10 @@ var bindi = new function()
     this.attachDataToComponent(element, undefined);
     if (occurencesElement > 0)
       this.notifyBindSubscribers(element);
+    if (this.config.removeMarkup !== false)
+      this.removeMarkupFromElement(element);
     return (occurences + occurencesElement);
   }
-
 
   this.bindComponentWithData = function(componentName, element, data)
   {
@@ -489,6 +543,8 @@ var bindi = new function()
     this.bindAttributes(componentName, element, data);
     this.attachDataToComponent(element, data);
     this.notifyBindSubscribers(element);
+    if (this.config.removeMarkup !== false)
+      this.removeMarkupFromElement(element);
     return (element);
   }
 
@@ -511,6 +567,7 @@ var bindi = new function()
   {
     newComponent = this.cloneModel(componentName);
 
+    this.notifyCloneSubscribers(newComponent);
     this.bindComponentWithData(componentName, newComponent.element, object);
     newComponent.element.setAttribute(BINDI_LOADED, true);
     this.notifyAddSusbcribers(newComponent);
@@ -541,9 +598,14 @@ var bindi = new function()
   this.init = function(config)
   {
     var elements = document.querySelectorAll('[' + BINDI_NAME + ']');
+    var REMOVE_MARKUP_KEY = "removeMarkup";
 
     if (config !== null && typeof config === 'object')
+    {
+      if (config[REMOVE_MARKUP_KEY])
+        self.config[REMOVE_MARKUP_KEY] = config[REMOVE_MARKUP_KEY];
       this.notifyInitSubscribers(config);
+    }
     for (var i = 0; i < elements.length; i++)
     {
       if (!self.contains(elements[i]))

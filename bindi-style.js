@@ -1,7 +1,7 @@
 (function()
 {
-  var BINDI_STYLE_CLASS_ADD = "bi-add";
-  var BINDI_STYLE_CLASS_RM = "bi-rm";
+  var BINDI_STYLE_CLASS_ADD = bindi.PREFIX + "add";
+  var BINDI_STYLE_CLASS_RM = bindi.PREFIX + "rm";
 
   var BINDI_CONFIG_NAME = "style";
   var BINDI_CONFIG_NAME_ADD = "add";

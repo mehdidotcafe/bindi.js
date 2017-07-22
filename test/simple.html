@@ -17,7 +17,9 @@
     </div>
     <script src="../bindi.js"></script>
     <script>
-    bindi.init();
+    bindi.init({
+      removeMarkup: ['bi-name', 'bi']
+    });
     var data = {
       id: "green",
       text: "Hello World"

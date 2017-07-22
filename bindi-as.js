@@ -1,7 +1,7 @@
 (function()
 {
-  var BINDI_AS = "bi-as";
-  var BINDI_ID = "bi-id";
+  var BINDI_AS = bindi.PREFIX + "as";
+  var BINDI_ID = bindi.PREFIX + "id";
 
   var unmatchedComponents = {};
   var self = this;
@@ -28,13 +28,12 @@
 
     model.id = oldModelElement.id;
     model.element = tmpModel.element;
-    model.element.setAttribute("bi-name", name);
+    model.element.setAttribute(bindi.COMPONENT_NAME, name);
     oldModelElement.insertAdjacentElement('afterend', model.element)
     oldModelElement.remove();
     tmpComponent = bindi.cloneModelFromModel(model);
     component.id = tmpComponent.id;
     component.element = tmpComponent.element;
-    // model.element.insertAdjacentElement('afterend', component.element)
   }
 
   this.addComponentToUnmatched = function(name, componentName, component, model)
@@ -45,6 +44,7 @@
   }
 
   bindi.register(BINDI_AS);
+  bindi.register(BINDI_ID);
   bindi.onRegister(function(name, component, model, bindi)
   {
     var element = component.element;

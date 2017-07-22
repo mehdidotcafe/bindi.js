@@ -7,17 +7,22 @@
   </head>
   <body>
     <div bi-name="simple-component" bi="id" id="%id%">
-      <img bi-src="http://www.willemsefrance.fr/media/%path%"></img>
+      <img bi="lol" bi-differ="src" bi-src="%path:%"></img>
       <span bi="html">%text%</span>
     </div>
     <script src="../bindi.js"></script>
-    <script src="../bindi-src.js"></script>
+    <script src="../bindi-differ.js"></script>
     <script>
-      bindi.init();
+      var toto = document.createElement('img');
+
+      toto.src = "";
+      bindi.init({
+        removeMarkup: true
+      });
       var data = {
         id: "green",
-        text: "Hello World",
-        path: "catalog/product/cache/1/image/x300/p/a/palmier_des_canaries_r00611290178_0.jpg"
+        text: "Sponge Bob",
+        path: "http://www.bob-l-eponge.info/Images/Bob_eponge/spongebob.png"
       };
 
       bindi.update("simple-component", data);

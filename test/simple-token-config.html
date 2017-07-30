@@ -4,12 +4,7 @@
     <meta charset="utf-8">
     <title>Simple Test</title>
     <style>
-      #coming
-      {
-        color: red;
-      }
-
-      #came
+      #green
       {
         color: green;
       }
@@ -17,21 +12,24 @@
     <link rel="stylesheet" type="text/css" href="../bindi.css">
   </head>
   <body>
-    <div bi-name="simple-component" bi="html id" id="%id:coming%">
-      %text:"Data Coming"%
+    <div bi-name="simple-component" bi="html id" id="{{id}}">
+      {{text:lol}}
     </div>
     <script src="../bindi.js"></script>
     <script>
+    bindi.init({
+      removeMarkup: ['bi-name', 'bi'],
+      tokens: {
+        start: '{{',
+        end: '}}'
+      }
+    });
     var data = {
-      id: "came",
-      text: "Hello World"
+      id: "green",
+      text: undefined
     };
 
-    bindi.init();
-    setTimeout(function()
-    {
-      bindi.update("simple-component", data);
-    }, 2000);
+    bindi.update("simple-component", data);
     </script>
   </body>
 </html>

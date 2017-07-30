@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Simple Test</title>
+    <style>
+      #green
+      {
+        color: green;
+      }
+
+      .box
+      {
+        background-color: red;
+        height: 400px;
+        width: 400px;
+      }
+    </style>
+    <link rel="stylesheet" type="text/css" href="../bindi.css">
+  </head>
+  <body>
+    <div bi-name="simple-component">
+      <span bi="html">%text:Default%</span>
+      <button bi-click="printHelloWorld" type="button">Click</button>
+    </div>
+    <script src="../bindi.js"></script>
+    <script src="../bindi-click.js"></script>
+    <script>
+    var counter = 0;
+    function printHelloWorld(element, data)
+    {
+      data['text'] = counter++;
+      return ("Hello World");
+    }
+
+    bindi.init();
+
+    bindi.update("simple-component", {
+      text: 'hello'
+    });
+    </script>
+  </body>
+</html>

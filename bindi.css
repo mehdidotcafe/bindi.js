@@ -1,6 +1,6 @@
-*[bi-name]
+*[bi-name]:not([bi-loaded])
 {
-  display: none;
+  display: none !important;
 }
 
 *[bi-loaded]

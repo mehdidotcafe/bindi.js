@@ -10,20 +10,19 @@
 
     if (!element.hasAttribute(BINDI_CLICK))
       return ;
-
     element.addEventListener("click", function()
     {
       attrVal = element.getAttribute(BINDI_CLICK);
       expr = bindi.interpret(attrVal, true);
       expr.args.push({
         key: element,
-        def: undefined
+        def: element
       });
       expr.args.push({
         key: data,
-        def: undefined
+        def: data
       });
-      bindi.execExpr(expr, attrVal, data);
+      bindi.execExpr(expr, attrVal, data, true);
       bindi.evaluate(component);
     });
   });

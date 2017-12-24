@@ -1,9 +1,9 @@
 (function()
 {
-  var BI_DIFFER_NAME = bindi.PREFIX + "differ";
+  var BI_DIFFER_NAME = bindi.PREFIX + 'differ';
 
   bindi.register(BI_DIFFER_NAME);
-  bindi.onPreBind(function(element, attributes, bindi)
+  bindi.onPreBind(function(element, attributes)
   {
     var attr;
     var attrVal;

@@ -18,10 +18,9 @@
   </head>
   <body>
     <div bi-name="simple-component" bi="html id" id="%formatOutput id:big%">
-      %text:Hello%
+      %text:"big text"%
     </div>
     <script src="../bindi.js"></script>
-    <script src="../bindi-pre-render.js"></script>
     <script>
 
     function formatOutput(id)
@@ -32,7 +31,7 @@
     bindi.init();
     var data = {
       id: "green",
-      text: "New Data"
+      text: "green text"
     };
 
     setTimeout(function()

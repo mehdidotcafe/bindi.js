@@ -6,6 +6,7 @@ var bindi = new function()
   this.PREFIX = this.NAME + "-";
   this.COMPONENT_NAME = this.PREFIX + "name";
 
+  this.functions = {};
   this.config = {
     removeMarkup: false
   };
@@ -109,16 +110,19 @@ var bindi = new function()
   {
     var time;
 
-    for (var i = 0; i < components[name].elements.length; i++)
+    if (components[name])
     {
-      this.notifyRemoveSusbcribers(components[name].elements[i]);
-      time = this.getMaxElementDelay(components[name].elements[i].element);
-      if (time <= 0)
-        removeElementTimeout(components[name].elements[i].element)();
-      else
-        setTimeout(removeElementTimeout(components[name].elements[i].element), time);
+      for (var i = 0; i < components[name].elements.length; i++)
+      {
+        this.notifyRemoveSusbcribers(components[name].elements[i]);
+        time = this.getMaxElementDelay(components[name].elements[i].element);
+        if (time <= 0)
+          removeElementTimeout(components[name].elements[i].element)();
+        else
+          setTimeout(removeElementTimeout(components[name].elements[i].element), time);
+      }
+      components[name].elements = [];
     }
-    components[name].elements = [];
   }
 
   this.register = function(attribute)
@@ -177,6 +181,10 @@ var bindi = new function()
     var previous = collection.previous;
     var parent = collection.parent;
 
+    /**
+     * @TODO when netting next and prev get bi-name of the adjacent elemnts if they are comps.
+     * query dom to get theses comps and insert after / before
+     */
     if (next)
       next.insertAdjacentElement('beforebegin', element);
     else if (previous)
@@ -242,10 +250,22 @@ var bindi = new function()
     return (variableValue);
   }
 
-  this.notifyRegisterSubscribers = function(name, component, model, element)
+  this.notifyRegisterSubscribers = function(name, component, model, cb)
   {
-    for (var i = 0; i < registerListeners.length; i++)
-      registerListeners[i](name, component, model, self);
+    var i = 0;
+
+    var next = function()
+    {
+      if (i < registerListeners.length)
+        registerListeners[i](name, component, model, self, function()
+        {
+          i = i + 1;
+          next();
+        });
+      else
+        cb();
+    }
+    next();
   }
 
   this.notifyInitSubscribers = function(config)
@@ -306,24 +326,8 @@ var bindi = new function()
     return (newAttributes);
   }
 
-  this.registerComponent = function(name, element)
+  this.bindComponent = function(component, model, name)
   {
-    var model = new this.ComponentModel(name, element);
-    var component = this.cloneModelFromModel(model);
-    var parent = element.parentElement;
-
-    if (!components.hasOwnProperty(name))
-    {
-      this.notifyRegisterSubscribers(name, component, model);
-      components[name] = {
-        model: model,
-        previous: element.previousElementSibling,
-        next: element.nextElementSibling,
-        // index: this.getElementIndex(element),
-        parent: parent,
-        elements: []
-      };
-    }
     if (this.bindComponentWithDefault(component, component.element) > 0)
     {
       this.insertElement(components[name], component.element);
@@ -331,6 +335,31 @@ var bindi = new function()
       components[name].elements.push(component);
     }
     model.element.remove();
+  }
+
+  this.registerComponent = function(name, element, callback)
+  {
+    var model = new this.ComponentModel(name, element);
+    var component = this.cloneModelFromModel(model);
+    var parent = element.parentElement;
+
+
+    if (!components.hasOwnProperty(name))
+    {
+      this.notifyRegisterSubscribers(name, component, model, function()
+      {
+        components[name] = {
+          model: model,
+          previous: model.element.previousElementSibling,
+          next: model.element.nextElementSibling,
+          parent: parent,
+          elements: []
+        };
+        self.bindComponent(component, model, name);
+      });
+    }
+    else
+      self.bindComponent(component, model, name);
   }
 
   this.foreachJson = function(obj, fx)
@@ -409,7 +438,6 @@ var bindi = new function()
         expr.name = defValue[0];
         expr.def = this.unescape(defValue[1]);
       }
-    // console.log(expr);
     return (expr);
   }
 
@@ -476,19 +504,20 @@ var bindi = new function()
       else if (expr.args[i].def !== undefined)
         expr.args[i].value = expr.args[i].def;
       else
-        expr.args[i].value = expr.args[i].key;
+        return (false);
     }
+    return (true);
   }
 
   this.execFx = function(expr)
   {
-    return (window[expr.name].apply(this, expr.args.map(function(obj)
+    return ((bindi.functions[expr.name] || window[expr.name]).apply(this, expr.args.map(function(obj)
     {
       return (obj.value);
     })));
   }
 
-  this.execExpr = function(expr, attrValue, data)
+  this.execExpr = function(expr, attrValue, data, isNeedingMerging)
   {
     var value;
     var attrValue;
@@ -496,10 +525,10 @@ var bindi = new function()
     // expression is a function call
     if (expr.args.length > 0)
     {
-      this.dataOrDefault(expr, data);
-      value = this.execFx(expr);
+      if (isNeedingMerging !== true || this.dataOrDefault(expr, data) === true)
+        value = this.execFx(expr);
     }
-    else if (window[expr.name])
+    else if (bindi.functions[expr.name] || typeof window[expr.name] === "function")
       value = this.execFx(expr);
     else
       value = data !== undefined && data[expr.name] !== undefined ? data[expr.name] : expr.def;
@@ -519,7 +548,7 @@ var bindi = new function()
       return (occurences);
     while ((expr = this.interpret(attrValue)) !== undefined)
     {
-      attrValue = this.execExpr(expr, attrValue, data);
+      attrValue = this.execExpr(expr, attrValue, data, true);
       set(attrValue);
       if (expr.args.length > 0 || expr.def)
         ++occurences;
@@ -623,6 +652,7 @@ var bindi = new function()
 
   this.update = function(componentName, data)
   {
+    console.log(components);
     this.remove(componentName);
     this.add(componentName, data);
   }
@@ -643,9 +673,45 @@ var bindi = new function()
     }
   }
 
-  this.init = function(config)
+  this.init = function(config, element)
   {
-    var elements = document.querySelectorAll('[' + BINDI_NAME + ']');
+    var elements = (element || document).querySelectorAll('[' + BINDI_NAME + ']');
+
+    function callback()
+    {
+      var newElements = (element || document).querySelectorAll('[' + BINDI_NAME + ']');
+      var isNew;
+
+      for (var i = 0; i < newElements.length; i++)
+      {
+        isNew = true;
+        for (var j = 0; i < elements.length; j++)
+        {
+          if (elements[j] == newElements[i])
+          {
+            isNew = false;
+            break ;
+          }
+        }
+        if (isNew === true)
+          self.registerComponent(newElements[i].getAttribute(BINDI_NAME), newElements[i]);
+      }
+    }
+
+
+    function countAndCallback(elems, callback)
+    {
+      var count = 0;
+
+      return function()
+      {
+        ++count;
+        if (count === elems.length)
+          callback();
+      }
+    }
+
+    var ccRet = countAndCallback(elements, callback);
 
     if (config !== null && typeof config === 'object')
     {
@@ -657,7 +723,7 @@ var bindi = new function()
     {
       // if (!self.contains(elements[i]))
       // {
-        self.registerComponent(elements[i].getAttribute(BINDI_NAME), elements[i]);
+        self.registerComponent(elements[i].getAttribute(BINDI_NAME), elements[i], ccRet);
       // }
     }
   }

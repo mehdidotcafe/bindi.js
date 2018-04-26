@@ -1,4 +1,4 @@
-var bindi = new function()
+function _bindi()
 {
   this.DEFAULT_PHASE = 0x1;
   this.UPDATE_PHASE = 0x2;
@@ -6,10 +6,11 @@ var bindi = new function()
   this.PREFIX = this.NAME + "-";
   this.COMPONENT_NAME = this.PREFIX + "name";
 
-  this.functions = {};
   this.config = {
     removeMarkup: false
   };
+
+  this.functions = {};
 
   var BINDI_HTML_VALUE = "html";
   var BINDI_LOADED = this.PREFIX + "loaded";
@@ -181,10 +182,6 @@ var bindi = new function()
     var previous = collection.previous;
     var parent = collection.parent;
 
-    /**
-     * @TODO when netting next and prev get bi-name of the adjacent elemnts if they are comps.
-     * query dom to get theses comps and insert after / before
-     */
     if (next)
       next.insertAdjacentElement('beforebegin', element);
     else if (previous)
@@ -250,22 +247,10 @@ var bindi = new function()
     return (variableValue);
   }
 
-  this.notifyRegisterSubscribers = function(name, component, model, cb)
+  this.notifyRegisterSubscribers = function(name, component, model, element)
   {
-    var i = 0;
-
-    var next = function()
-    {
-      if (i < registerListeners.length)
-        registerListeners[i](name, component, model, self, function()
-        {
-          i = i + 1;
-          next();
-        });
-      else
-        cb();
-    }
-    next();
+    for (var i = 0; i < registerListeners.length; i++)
+      registerListeners[i](name, component, model, self);
   }
 
   this.notifyInitSubscribers = function(config)
@@ -326,8 +311,24 @@ var bindi = new function()
     return (newAttributes);
   }
 
-  this.bindComponent = function(component, model, name)
+  this.registerComponent = function(name, element)
   {
+    var model = new this.ComponentModel(name, element);
+    var component = this.cloneModelFromModel(model);
+    var parent = element.parentElement;
+
+    if (!components.hasOwnProperty(name))
+    {
+      this.notifyRegisterSubscribers(name, component, model);
+      components[name] = {
+        model: model,
+        previous: element.previousElementSibling,
+        next: element.nextElementSibling,
+        // index: this.getElementIndex(element),
+        parent: parent,
+        elements: []
+      };
+    }
     if (this.bindComponentWithDefault(component, component.element) > 0)
     {
       this.insertElement(components[name], component.element);
@@ -335,31 +336,6 @@ var bindi = new function()
       components[name].elements.push(component);
     }
     model.element.remove();
-  }
-
-  this.registerComponent = function(name, element, callback)
-  {
-    var model = new this.ComponentModel(name, element);
-    var component = this.cloneModelFromModel(model);
-    var parent = element.parentElement;
-
-
-    if (!components.hasOwnProperty(name))
-    {
-      this.notifyRegisterSubscribers(name, component, model, function()
-      {
-        components[name] = {
-          model: model,
-          previous: model.element.previousElementSibling,
-          next: model.element.nextElementSibling,
-          parent: parent,
-          elements: []
-        };
-        self.bindComponent(component, model, name);
-      });
-    }
-    else
-      self.bindComponent(component, model, name);
   }
 
   this.foreachJson = function(obj, fx)
@@ -425,18 +401,18 @@ var bindi = new function()
         expr.name = matches[i];
       else
       {
-        defValue = matches[i].split(BINDI_DEF_VALUE_TOKEN);
+        defValue = matches[i].split(/\:(?=([^"]*"[^"]*")*[^"]*$)/);
         expr.args.push({
           key: defValue[0],
-          def: this.unescape(defValue[1])
+          def: this.unescape(defValue[2])
         });
       }
     }
     if (expr.args == 0)
       {
-        defValue = expr.name.split(BINDI_DEF_VALUE_TOKEN);
+        defValue = expr.name.split(/\:(?=([^"]*"[^"]*")*[^"]*$)/);
         expr.name = defValue[0];
-        expr.def = this.unescape(defValue[1]);
+        expr.def = this.unescape(defValue[2]);
       }
     return (expr);
   }
@@ -465,30 +441,31 @@ var bindi = new function()
     return (attr);
   }
 
-  this.bindAttributes = function(componentName, component, data)
+  this.bindAttributes = function(componentName, fakeComponent, data)
   {
-    var attr = component.getAttribute(BINDI_ATTR);
+    var element = fakeComponent.element;
+    var attr = element.getAttribute(BINDI_ATTR);
     var occurences = 0;
 
     attr = this.splitConcat(attr);
-    attr = attr.concat(this.notifyPreBindSubscribers(component, attr, data));
+    attr = attr.concat(this.notifyPreBindSubscribers(fakeComponent, attr, data));
     for (var i = 0; i < attr.length; i++)
     {
       if (attr[i] == BINDI_HTML_VALUE)
-        occurences += self.bindAttr(componentName, component, attr[i], data, function()
+        occurences += self.bindAttr(componentName, fakeComponent, attr[i], data, function()
         {
-          return (component.textContent);
+          return (element.textContent);
         }, function(v)
         {
-          component.textContent = v;
+          element.textContent = v;
         });
       else
-        occurences += self.bindAttr(componentName, component, attr[i], data, function()
+        occurences += self.bindAttr(componentName, fakeComponent, attr[i], data, function()
         {
-          return component.getAttribute(attr[i]);
+          return element.getAttribute(attr[i]);
         }, function(v)
         {
-          component.setAttribute(attr[i], v);
+          element.setAttribute(attr[i], v);
         });
     }
     return (occurences);
@@ -504,9 +481,8 @@ var bindi = new function()
       else if (expr.args[i].def !== undefined)
         expr.args[i].value = expr.args[i].def;
       else
-        return (false);
+        expr.args[i].value = expr.args[i].key;
     }
-    return (true);
   }
 
   this.execFx = function(expr)
@@ -517,7 +493,16 @@ var bindi = new function()
     })));
   }
 
-  this.execExpr = function(expr, attrValue, data, isNeedingMerging)
+  this.addElementToExpr = function(expr, element)
+  {
+    expr.args.push({
+      key: element,
+      value: element
+    });
+    return expr;
+  }
+
+  this.execExpr = function(expr, attrValue, data, fakeComponent)
   {
     var value;
     var attrValue;
@@ -525,30 +510,43 @@ var bindi = new function()
     // expression is a function call
     if (expr.args.length > 0)
     {
-      if (isNeedingMerging !== true || this.dataOrDefault(expr, data) === true)
-        value = this.execFx(expr);
-    }
-    else if (bindi.functions[expr.name] || typeof window[expr.name] === "function")
+      this.dataOrDefault(expr, data);
+      expr = this.addElementToExpr(expr, fakeComponent);
       value = this.execFx(expr);
+    }
+    else if (typeof window[expr.name] === "function" || bindi.functions[expr.name] !== undefined)
+    {
+      var nexpr = {
+        name: expr.name,
+        args: [{
+          value: fakeComponent
+        },
+        {
+          value: data
+        }]
+      };
+      value = this.execFx(nexpr);
+    }
     else
       value = data !== undefined && data[expr.name] !== undefined ? data[expr.name] : expr.def;
     return (attrValue.replace(expr.expr, value));
   }
 
-  this.bindAttr = function(componentName, element, attr, data, get, set)
+  this.bindAttr = function(componentName, fakeComponent, attr, data, get, set)
   {
     var attrValue;
     var expr;
     var value;
     var occurences = 0;
+    var element = fakeComponent.element;
 
-    this.notifyPreInterpretSubscribers(element);
+    this.notifyPreInterpretSubscribers(fakeComponent);
     attrValue = get();
     if (attrValue === null)
       return (occurences);
     while ((expr = this.interpret(attrValue)) !== undefined)
     {
-      attrValue = this.execExpr(expr, attrValue, data, true);
+      attrValue = this.execExpr(expr, attrValue, data, fakeComponent);
       set(attrValue);
       if (expr.args.length > 0 || expr.def)
         ++occurences;
@@ -574,9 +572,9 @@ var bindi = new function()
 
     for (var i = 0; i < element.children.length; i++)
       occurences += this.bindComponentWithDefault(component, element.children[i]);
-    occurencesElement += this.bindAttributes(component.name, element, undefined);
+    occurencesElement += this.bindAttributes(component.name, {element: element}, undefined);
     this.attachDataToComponent(element, undefined);
-    if (occurencesElement > 0)
+    // if (occurencesElement > 0)
       this.notifyBindSubscribers(component, element, undefined);
     if (this.config.removeMarkup !== false)
       this.removeMarkupFromElement(element);
@@ -587,7 +585,7 @@ var bindi = new function()
   {
     for (var i = 0; i < element.children.length; i++)
       this.bindComponentWithData(component, element.children[i], data);
-    this.bindAttributes(component.name, element, data);
+    this.bindAttributes(component.name, {element: element}, data);
     this.attachDataToComponent(element, data);
     this.notifyBindSubscribers(component, element, data);
     if (this.config.removeMarkup !== false)
@@ -652,7 +650,6 @@ var bindi = new function()
 
   this.update = function(componentName, data)
   {
-    console.log(components);
     this.remove(componentName);
     this.add(componentName, data);
   }
@@ -673,45 +670,15 @@ var bindi = new function()
     }
   }
 
-  this.init = function(config, element)
+  this.reset = function()
   {
-    var elements = (element || document).querySelectorAll('[' + BINDI_NAME + ']');
+    components = {}
+    this.functions = {}
+  }
 
-    function callback()
-    {
-      var newElements = (element || document).querySelectorAll('[' + BINDI_NAME + ']');
-      var isNew;
-
-      for (var i = 0; i < newElements.length; i++)
-      {
-        isNew = true;
-        for (var j = 0; i < elements.length; j++)
-        {
-          if (elements[j] == newElements[i])
-          {
-            isNew = false;
-            break ;
-          }
-        }
-        if (isNew === true)
-          self.registerComponent(newElements[i].getAttribute(BINDI_NAME), newElements[i]);
-      }
-    }
-
-
-    function countAndCallback(elems, callback)
-    {
-      var count = 0;
-
-      return function()
-      {
-        ++count;
-        if (count === elems.length)
-          callback();
-      }
-    }
-
-    var ccRet = countAndCallback(elements, callback);
+  this.init = function(config)
+  {
+    var elements = document.querySelectorAll('[' + BINDI_NAME + ']');
 
     if (config !== null && typeof config === 'object')
     {
@@ -723,10 +690,12 @@ var bindi = new function()
     {
       // if (!self.contains(elements[i]))
       // {
-        self.registerComponent(elements[i].getAttribute(BINDI_NAME), elements[i], ccRet);
+        self.registerComponent(elements[i].getAttribute(BINDI_NAME), elements[i]);
       // }
     }
   }
 
   return (this);
 };
+
+var bindi = new _bindi();

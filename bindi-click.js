@@ -10,7 +10,7 @@
 
     if (!element.hasAttribute(BINDI_CLICK))
       return ;
-    element.addEventListener("click", function()
+    element.addEventListener("click", function(e)
     {
       attrVal = element.getAttribute(BINDI_CLICK);
       expr = bindi.interpret(attrVal, true);
@@ -21,6 +21,10 @@
       expr.args.push({
         key: data,
         def: data
+      });
+      expr.agrs.push({
+        key: e,
+        def: e
       });
       bindi.execExpr(expr, attrVal, data, true);
       bindi.evaluate(component);
